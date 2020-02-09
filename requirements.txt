@@ -1,4 +1,6 @@
+autopep8
 future==0.16.0
+requests==2.22.0
 numpy==1.16.0
 opencv-contrib-python==3.4.5.20
 yapf==0.25.0

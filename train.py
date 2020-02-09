@@ -5,7 +5,10 @@
 #
 
 
-import sys, os, argparse, math
+import sys
+import os
+import argparse
+import math
 import cv2
 import numpy as np
 
@@ -13,6 +16,7 @@ from obj_loader import OBJ
 
 
 WINDOW_SIZE = 2000
+
 
 def extract_features(model_path):
     """ """
@@ -67,13 +71,10 @@ def feature_matching(model_path, scene_path, min_matches=15):
         # cv2.imshow('frame', cap_resized)
         # cv2.waitKey(0)
     else:
-        print("Not enough matches have been found. - {}/{}".format(len(matches), min_matches))
+        print(
+            "Not enough matches have been found. - {}/{}".format(len(matches), min_matches))
 
     return (cap, model, kp_model, kp_frame, matches)
-
-
-
-
 
 
 def ransac(kp_frame, matches):
@@ -110,7 +111,6 @@ def draw_homography_rect(M):
     # cv2.waitKey(0)
 
 
-
 def projection_matrix(camera_parameters, homography):
     """ 
     From the camera calibration matrix and the estimated homography, 
@@ -139,8 +139,10 @@ def projection_matrix(camera_parameters, homography):
     c = rot_1 + rot_2
     p = np.cross(rot_1, rot_2)
     d = np.cross(c, p)
-    rot_1 = np.dot(c / np.linalg.norm(c, 2) + d / np.linalg.norm(d, 2), 1 / math.sqrt(2))
-    rot_2 = np.dot(c / np.linalg.norm(c, 2) - d / np.linalg.norm(d, 2), 1 / math.sqrt(2))
+    rot_1 = np.dot(c / np.linalg.norm(c, 2) + d /
+                   np.linalg.norm(d, 2), 1 / math.sqrt(2))
+    rot_2 = np.dot(c / np.linalg.norm(c, 2) - d /
+                   np.linalg.norm(d, 2), 1 / math.sqrt(2))
     rot_3 = np.cross(rot_1, rot_2)
     # finally, compute the 3D projection matrix from the model to the current frame
     projection = np.stack((rot_1, rot_2, rot_3, translation)).T
@@ -183,9 +185,6 @@ def hex_to_rgb(hex_color):
     return tuple(
         int(hex_color[i:i + h_len // 3], 16)
         for i in range(0, h_len, h_len // 3))
-
-
-
 
 
 def main(options):
@@ -239,20 +238,24 @@ def main(options):
 
             # src_pts, dst_pts, homography, mask = ransac(kp_frame, matches)
             # compute Homography
-            homography, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+            homography, mask = cv2.findHomography(
+                src_pts, dst_pts, cv2.RANSAC, 5.0)
 
             # Draw a rectangle that marks the found model in the frame
             h, w = model.shape
-            pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+            pts = np.float32(
+                [[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
             # project corners into frame
             dst = cv2.perspectiveTransform(pts, homography)
             # connect them with lines
-            frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+            frame = cv2.polylines(
+                frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
 
             if homography is not None:
                 try:
                     # obtain 3D projection matrix from homography matrix and camera parameters
-                    projection = projection_matrix(camera_parameters, homography)
+                    projection = projection_matrix(
+                        camera_parameters, homography)
                     # project cube or model
                     frame = render(frame, projection, False)
                     #frame = render(frame, model, projection)
@@ -269,7 +272,8 @@ def main(options):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         else:
-            print("Not enough matches found. {}/{}".format(len(matches), options.min_match))
+            print(
+                "Not enough matches found. {}/{}".format(len(matches), options.min_match))
 
     cap.release()
     cv2.destroyAllWindows()
@@ -279,24 +283,19 @@ def main(options):
     # feature_matching(model_path=options.model, scene_path=options.scene, min_matches=options.min_match)
 
 
-
-
 def parse_args(argv):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--model", type=str,
-        help="Input file of image to train on.")
+                        help="Input file of image to train on.")
     parser.add_argument("--scene", type=str, default=None,
-        help="Input file path of scene.")
+                        help="Input file path of scene.")
 
     parser.add_argument("--obj", type=str, default=None,
-        help="Input file for 3D object (format: obj) to render.")
-
+                        help="Input file for 3D object (format: obj) to render.")
 
     parser.add_argument("--min_match", type=int, default=15,
-        help="Minimum amount of feature matches to consider the detection as a match.")
-
-
+                        help="Minimum amount of feature matches to consider the detection as a match.")
 
     return parser.parse_args(args=argv)
 
